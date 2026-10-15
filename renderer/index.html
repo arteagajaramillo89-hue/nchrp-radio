@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: mediastream:; connect-src 'self' https://radio.newchicago.xyz wss://radio.newchicago.xyz; worker-src 'self' blob:">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NCHRP Radio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main id="vista-login" class="vista">
+  <div class="marca">
+    <div class="logo grande" data-logo></div>
+    <small>New Chicago RP</small>
+    <h1>RADIO</h1>
+  </div>
+  <label for="placa">Placa</label>
+  <input id="placa" inputmode="numeric" maxlength="4" placeholder="Ej: 4227" autocomplete="username">
+  <label for="pass">Contraseña</label>
+  <input id="pass" type="password" maxlength="64" autocomplete="current-password">
+  <button id="entrar" type="button" class="primario">Entrar</button>
+  <a href="#" id="olvide" class="enlace">¿Olvidaste tu contraseña?</a>
+  <p id="msg-login" class="msg" role="status" aria-live="polite"></p>
+  <p class="pie" id="version"></p>
+</main>
+
+<main id="vista-radio" class="vista" hidden>
+  <header class="cab">
+    <div class="logo" data-logo></div>
+    <div class="quien"><b id="nombre"></b><span id="chip" class="chip"></span></div>
+    <button id="salir" type="button" class="peq">Salir</button>
+  </header>
+
+  <section>
+    <h2>Canales</h2>
+    <div id="canales" class="canales"></div>
+    <div class="estado"><span id="punto" class="punto"></span><span id="estado-texto">Desconectado</span></div>
+  </section>
+
+  <button id="ptt" type="button" class="ptt" disabled>
+    <span id="ptt-t">HABLAR</span>
+    <small id="ptt-sub"></small>
+  </button>
+  <p id="hablando" class="hablando"></p>
+  <p id="presentes" class="presentes"></p>
+
+  <section class="ajustes">
+    <h2>Ajustes</h2>
+    <div class="fila"><span>Tecla de hablar</span><span><b id="tecla">—</b> <button id="cambiar-tecla" type="button" class="peq">Cambiar</button></span></div>
+    <div class="fila"><label for="vol">Volumen</label><input id="vol" type="range" min="0" max="100" value="80"></div>
+    <div class="fila"><label for="mic">Micrófono</label><select id="mic"><option value="">Predeterminado</option></select></div>
+    <label class="check"><input id="ontop" type="checkbox"> Mantener esta ventana siempre visible</label>
+    <p id="aviso-tecla" class="aviso" hidden>La tecla global no está disponible en este equipo. Usa el botón HABLAR con el ratón.</p>
+  </section>
+  <p id="msg-radio" class="msg" role="status" aria-live="polite"></p>
+</main>
+
+<script src="vendor/livekit-client.umd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

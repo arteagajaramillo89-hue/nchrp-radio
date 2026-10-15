@@ -1,0 +1,50 @@
+{
+  "name": "nchrp-radio",
+  "productName": "NCHRP Radio",
+  "version": "1.0.0",
+  "description": "Radio de los cuerpos de New Chicago RP",
+  "main": "main.js",
+  "author": "New Chicago RP",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never",
+    "vendor": "node -e \"require('fs').copyFileSync('node_modules/livekit-client/dist/livekit-client.umd.js','renderer/vendor/livekit-client.umd.js')\""
+  },
+  "dependencies": {
+    "uiohook-napi": "1.5.5"
+  },
+  "devDependencies": {
+    "electron": "39.8.10",
+    "electron-builder": "26.15.3",
+    "livekit-client": "2.22.4"
+  },
+  "build": {
+    "appId": "xyz.newchicago.radio",
+    "productName": "NCHRP Radio",
+    "artifactName": "NCHRP-Radio-Setup-${version}.exe",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "api.js",
+      "renderer/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
