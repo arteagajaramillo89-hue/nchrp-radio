@@ -17,4 +17,8 @@ contextBridge.exposeInMainWorld('nchrp', {
   alPtt: (cb) => ipcRenderer.on('ptt', (_e, d) => cb(d)),
   alSusurro: (cb) => ipcRenderer.on('susurro', (_e, d) => cb(d)),
   alCapturar: (cb) => ipcRenderer.on('ptt:captured', (_e, d) => cb(d)),
+  alActualizacion: (cb) => ipcRenderer.on('actualizacion', (_e, d) => cb(d)),
+  estadoActualizacion: () => ipcRenderer.invoke('actu:estado'),
+  instalarActualizacion: () => ipcRenderer.invoke('actu:instalar'),
+  abrirDescargas: () => ipcRenderer.invoke('actu:descargas'),
 });

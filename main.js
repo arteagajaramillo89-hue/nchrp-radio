@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, shell, session, Menu, systemPreferences } =
 const path = require('path');
 const fs = require('fs');
 const { post } = require('./api');
+const { crear: crearActualizador } = require('./updater');
 
 const URL_OLVIDE = 'https://newchicago.xyz/recuperar.html';
 const MAC = process.platform === 'darwin';
@@ -183,6 +184,15 @@ if (!app.requestSingleInstanceLock()) {
     registrarIpc();
     iniciarTecla();
     crearVentana();
+    // Actualizaciones: solo en la app instalada. Se espera unos segundos para no competir con el arranque.
+    const actualizador = crearActualizador({
+      app, enviar: (d) => enviar('actualizacion', d), abrir: (u) => shell.openExternal(u), plataforma: process.platform, fetchFn: fetch,
+      cargarAutoUpdater: () => { try { return require('electron-updater').autoUpdater; } catch (e) { console.error('electron-updater no disponible:', e.message); return null; } },
+    });
+    ipcMain.handle('actu:estado', () => actualizador.estado());
+    ipcMain.handle('actu:instalar', () => actualizador.instalar());
+    ipcMain.handle('actu:descargas', () => actualizador.abrirDescargas());
+    setTimeout(() => actualizador.iniciar(), 8000);
   });
   app.on('window-all-closed', () => app.quit());
   app.on('will-quit', () => { try { if (uio) uio.stop(); } catch (_) {} });
