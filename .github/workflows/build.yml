@@ -1,4 +1,4 @@
-name: Compilar instalador de Windows
+name: Compilar instaladores
 
 on:
   workflow_dispatch:
@@ -21,10 +21,29 @@ jobs:
       - run: npm run dist
       - uses: actions/upload-artifact@v4
         with:
-          name: NCHRP-Radio-instalador
+          name: NCHRP-Radio-Windows
           path: dist/*.exe
       - name: Publicar en Releases (solo con tags v*)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.exe
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NCHRP-Radio-Mac
+          path: dist/*.dmg
+      - name: Publicar en Releases (solo con tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
