@@ -531,16 +531,21 @@ let panicoHasta = 0, panicoTimer = null, panicoReloj = null;
 const ultimoPanico = new Map();   // identidad -> última vez que mandó un aviso (freno anti-spam)
 const COOLDOWN_PANICO = 10000, ESPERA_PANICO = 1500;
 
+// Sirena de emergencia: 8 golpes alternando dos tonos (~4 s). Va por su propio volumen para que se oiga
+// aunque el volumen de la radio esté bajo, pero respeta un mínimo si el usuario lo bajó mucho.
 function sirena() {
   asegurarAudio(); if (!ctx || !master) return;
-  const t0 = ctx.currentTime;
-  for (let i = 0; i < 6; i++) {
-    const o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + i * 0.28;
-    o.type = 'square'; o.frequency.value = i % 2 ? 660 : 990;
+  const vol = Math.min(0.5, Math.max(0.22, ((cfg.volumen == null ? 80 : cfg.volumen) / 100) * 0.45));
+  const t0 = ctx.currentTime, sal = ctx.createGain();
+  sal.gain.value = 1; sal.connect(ctx.destination);
+  for (let i = 0; i < 8; i++) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + i * 0.5;
+    o.type = 'square'; o.frequency.value = i % 2 ? 780 : 1020;
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.28);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+    g.gain.setValueAtTime(vol, t + 0.42);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.48);
+    o.connect(g); g.connect(sal); o.start(t); o.stop(t + 0.5);
   }
 }
 
@@ -554,12 +559,17 @@ function pintarPanico() {
 
 async function enviarPanico() {
   if (!room || Date.now() < panicoHasta) return;
+  const r = room, canal = nombreCanal(canalActual);
+  const otros = r.remoteParticipants ? r.remoteParticipants.size : 0;
   try {
-    await room.localParticipant.publishData(new TextEncoder().encode(JSON.stringify({ t: 'panico', v: 1 })), { reliable: true, topic: 'panico' });
-  } catch (_) { msgRadio('No se pudo enviar el aviso de pánico. Inténtalo otra vez.', true); return; }
+    await r.localParticipant.publishData(new TextEncoder().encode(JSON.stringify({ t: 'panico', v: 1 })), { reliable: true, topic: 'panico' });
+  } catch (e) {
+    msgRadio('No se pudo enviar el aviso de pánico (' + String((e && e.message) || 'error').slice(0, 80) + '). Inténtalo otra vez.', true); return;
+  }
   panicoHasta = Date.now() + COOLDOWN_PANICO; pintarPanico();
-  pitido(520, 0.25);
-  msgRadio('Aviso de pánico enviado al canal ' + nombreCanal(canalActual) + '.');
+  mostrarAlerta((usuario && usuario.nombre ? usuario.nombre : 'Tú') + (usuario && usuario.placa ? ' (' + usuario.placa + ')' : ''), canal, false, true);
+  if (otros > 0) msgRadio('Aviso de pánico enviado al canal ' + canal + ' (' + otros + (otros === 1 ? ' persona conectada' : ' personas conectadas') + ').');
+  else msgRadio('Aviso enviado al canal ' + canal + ', pero no hay nadie más conectado ahí ahora mismo.', true);
 }
 
 function empezarPanico() {
@@ -582,29 +592,36 @@ function alRecibirDatos(canalId, payload, participante, topic) {
   if (topic !== 'panico' || !participante || participante.isLocal) return;
   let d; try { d = JSON.parse(new TextDecoder().decode(payload)); } catch (_) { return; }
   if (!d || d.t !== 'panico') return;
-  const id = participante.identity, ahora = Date.now();
+  const id = String(participante.identity || ''), ahora = Date.now();
   if ((ultimoPanico.get(id) || 0) > ahora - 5000) return;
   ultimoPanico.set(id, ahora);
-  mostrarAlerta(participante.name || id, nombreCanal(canalId));
+  const placa = /^placa-(\d{1,6})$/.exec(id);
+  mostrarAlerta(participante.name || (placa ? 'Placa ' + placa[1] : id), nombreCanal(canalId));
 }
 
-function mostrarAlerta(quien, canal) {
+const MAX_ALERTAS = 3, VIDA_ALERTA_MS = 120000;
+function hora() { const f = new Date(); return String(f.getHours()).padStart(2, '0') + ':' + String(f.getMinutes()).padStart(2, '0'); }
+
+// Letrero rojo parpadeante abajo (encima de los botones): quién pide ayuda y en qué canal. Se queda hasta "Entendido" (o 2 min).
+function mostrarAlerta(quien, canal, prueba, propia) {
   const caja = $('#alertas');
-  while (caja.children.length >= 4) caja.removeChild(caja.firstChild);
-  const a = document.createElement('div'); a.className = 'alerta'; a.setAttribute('role', 'alert');
+  while (caja.children.length >= MAX_ALERTAS) caja.removeChild(caja.firstChild);
+  const a = document.createElement('div'); a.className = 'alerta' + (prueba ? ' prueba' : ''); a.setAttribute('role', 'alert');
   a.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg>';
   const c = document.createElement('div'); c.className = 'cuerpo';
-  const t = document.createElement('b'); t.textContent = 'EMERGENCIA';
-  const q = document.createElement('span'); q.textContent = quien + ' · canal ' + canal;
-  c.append(t, q);
+  const t = document.createElement('b'); t.textContent = prueba ? 'PRUEBA DE PÁNICO' : propia ? 'TU AVISO DE PÁNICO' : 'PÁNICO · SOLICITA AYUDA';
+  const q = document.createElement('span'); q.className = 'quien-pide'; q.textContent = quien;
+  const w = document.createElement('span'); w.className = 'donde'; w.textContent = 'Canal ' + canal + ' · ' + hora();
+  c.append(t, q, w);
   const x = document.createElement('button'); x.type = 'button'; x.textContent = 'Entendido';
   const quitar = () => { clearTimeout(tm); if (a.parentNode) a.parentNode.removeChild(a); };
   x.onclick = quitar;
-  const tm = setTimeout(quitar, 30000);
+  const tm = setTimeout(quitar, VIDA_ALERTA_MS);
   a.append(c, x); caja.appendChild(a);
   sirena();
   try { puente.alertar(); } catch (_) {}
 }
+$('#probar-alarma').onclick = () => { mostrarAlerta((usuario && usuario.nombre ? usuario.nombre : 'Tu nombre') + ' (prueba)', canalActual ? nombreCanal(canalActual) : 'Canal', true); };
 
 // ───────── Rueda de configuración (ventana con pestañas) ─────────
 function irTab(n) {

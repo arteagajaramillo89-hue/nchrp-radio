@@ -1,7 +1,7 @@
 {
   "name": "nchrp-radio",
   "productName": "NCHRP Radio",
-  "version": "1.5.1",
+  "version": "1.7.0",
   "description": "Radio de los cuerpos de New Chicago RP",
   "main": "main.js",
   "author": "New Chicago RP",
@@ -13,7 +13,8 @@
     "dist:mac": "electron-builder --mac --publish never -c.npmRebuild=false"
   },
   "dependencies": {
-    "uiohook-napi": "1.5.5"
+    "uiohook-napi": "1.5.5",
+    "electron-updater": "^6.6.2"
   },
   "devDependencies": {
     "electron": "39.8.10",
@@ -31,6 +32,7 @@
       "main.js",
       "preload.js",
       "api.js",
+      "updater.js",
       "renderer/**/*",
       "build/icon.png",
       "package.json"
@@ -66,6 +68,14 @@
         "NSMicrophoneUsageDescription": "NCHRP Radio necesita el micrófono para transmitir por radio."
       }
     },
-    "afterPack": "build/firma-mac.js"
+    "afterPack": "build/firma-mac.js",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "arteagajaramillo89-hue",
+        "repo": "nchrp-radio",
+        "releaseType": "release"
+      }
+    ]
   }
 }

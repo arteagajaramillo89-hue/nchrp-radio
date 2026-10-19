@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="actualizacion" class="actu" role="status" aria-live="polite" hidden><span id="actu-texto"></span><button id="actu-boton" type="button" class="peq" hidden></button></div>
 
 <main id="vista-login" class="vista">
   <div class="marca">
@@ -40,12 +41,12 @@
     </button>
   </header>
 
-  <div id="alertas" class="alertas" aria-live="assertive"></div>
-
   <section class="arbol-caja">
     <h2>Canales</h2>
     <div id="canales" class="arbol" role="tree"></div>
   </section>
+
+  <div id="alertas" class="alertas" aria-live="assertive"></div>
 
   <footer class="barra-inf">
     <p id="msg-radio" class="msg" role="status" aria-live="polite"></p>
@@ -80,6 +81,7 @@
         <div class="fila"><span>Tecla de hablar</span><span><b id="tecla">—</b> <button id="cambiar-tecla" type="button" class="peq">Cambiar</button></span></div>
         <div class="fila"><label for="mic">Micrófono</label><select id="mic"><option value="">Predeterminado</option></select></div>
         <div class="fila"><label for="vol">Volumen</label><input id="vol" type="range" min="0" max="100" value="80"></div>
+        <div class="fila"><span>Alarma de pánico</span><button id="probar-alarma" type="button" class="peq">Probar</button></div>
         <p id="aviso-tecla" class="aviso" hidden>La tecla global no está disponible en este equipo. Usa el botón HABLAR con el ratón.</p>
       </div>
 
@@ -108,6 +110,7 @@
 
 <script src="vendor/livekit-client.umd.js"></script>
 <script src="servicio.js"></script>
+<script src="actualizar-ui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
