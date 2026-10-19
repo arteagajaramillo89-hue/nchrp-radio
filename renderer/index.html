@@ -25,38 +25,89 @@
   <p class="pie" id="version"></p>
 </main>
 
-<main id="vista-radio" class="vista" hidden>
+<main id="vista-radio" class="vista radio" hidden>
   <header class="cab">
     <div class="logo" data-logo></div>
-    <div class="quien"><b id="nombre"></b><span id="chip" class="chip"></span></div>
-    <button id="salir" type="button" class="peq">Salir</button>
+    <div class="quien">
+      <b id="nombre"></b>
+      <span class="linea"><span id="chip" class="chip"></span><span id="servicio" class="serv" hidden></span><span class="estado"><span id="punto" class="punto"></span><span id="estado-texto">Desconectado</span></span></span>
+    </div>
+    <button id="abrir-mapa" type="button" class="icono" aria-label="Mapa de unidades" title="Mapa de unidades">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+    </button>
+    <button id="abrir-ajustes" type="button" class="icono" aria-label="Configuración" title="Configuración">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.3.9a7.6 7.6 0 0 0-1.7-1l-.4-2.5a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9a.5.5 0 0 0-.6.2L2.9 8.8a.5.5 0 0 0 .1.6L5 11a7.5 7.5 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3c.1.2.4.3.6.2l2.3-.9c.5.4 1.1.7 1.7 1l.4 2.5c0 .2.2.4.5.4h3.8c.3 0 .5-.2.5-.4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.3.9c.2.1.5 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6L19.4 13zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+    </button>
   </header>
 
-  <section>
+  <div id="alertas" class="alertas" aria-live="assertive"></div>
+
+  <section class="arbol-caja">
     <h2>Canales</h2>
-    <div id="canales" class="canales"></div>
-    <div class="estado"><span id="punto" class="punto"></span><span id="estado-texto">Desconectado</span></div>
+    <div id="canales" class="arbol" role="tree"></div>
   </section>
 
-  <button id="ptt" type="button" class="ptt" disabled>
-    <span id="ptt-t">HABLAR</span>
-    <small id="ptt-sub"></small>
-  </button>
-  <p id="hablando" class="hablando"></p>
-  <p id="presentes" class="presentes"></p>
+  <footer class="barra-inf">
+    <p id="msg-radio" class="msg" role="status" aria-live="polite"></p>
+    <p id="hablando" class="hablando"></p>
+    <div class="acciones">
+      <button id="ptt" type="button" class="ptt" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 0 0-7 0v6A3.5 3.5 0 0 0 12 15zm6-3.5a6 6 0 0 1-12 0H4.5a7.5 7.5 0 0 0 6.75 7.46V22h1.5v-3.04A7.5 7.5 0 0 0 19.5 11.5H18z"/></svg>
+        <span class="txt"><span id="ptt-t">HABLAR</span><small id="ptt-sub"></small></span>
+      </button>
+      <button id="panico" type="button" class="panico" disabled aria-label="Botón de pánico: mantén pulsado 1,5 segundos" title="Pánico: mantén pulsado 1,5 segundos">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg>
+        <small id="panico-t">SOS</small>
+      </button>
+    </div>
+  </footer>
 
-  <section class="ajustes">
-    <h2>Ajustes</h2>
-    <div class="fila"><span>Tecla de hablar</span><span><b id="tecla">—</b> <button id="cambiar-tecla" type="button" class="peq">Cambiar</button></span></div>
-    <div class="fila"><label for="vol">Volumen</label><input id="vol" type="range" min="0" max="100" value="80"></div>
-    <div class="fila"><label for="mic">Micrófono</label><select id="mic"><option value="">Predeterminado</option></select></div>
-    <label class="check"><input id="ontop" type="checkbox"> Mantener esta ventana siempre visible</label>
-    <p id="aviso-tecla" class="aviso" hidden>La tecla global no está disponible en este equipo. Usa el botón HABLAR con el ratón.</p>
-  </section>
-  <p id="msg-radio" class="msg" role="status" aria-live="polite"></p>
+  <div id="modal-ajustes" class="modal" hidden>
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tit-ajustes">
+      <div class="panel-cab">
+        <h2 id="tit-ajustes">Configuración</h2>
+        <button id="cerrar-ajustes" type="button" class="icono" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z"/></svg></button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab activa" role="tab" data-tab="voz">Voz</button>
+        <button type="button" class="tab" role="tab" data-tab="susurro">Susurro</button>
+        <button type="button" class="tab" role="tab" data-tab="ventana">Ventana</button>
+        <button type="button" class="tab" role="tab" data-tab="cuenta">Cuenta</button>
+      </div>
+
+      <div class="pagina" data-pagina="voz">
+        <p class="ayuda">Pulsa los auriculares junto a un canal para escucharlo además del principal. Hablas siempre en el principal.</p>
+        <div class="fila"><span>Tecla de hablar</span><span><b id="tecla">—</b> <button id="cambiar-tecla" type="button" class="peq">Cambiar</button></span></div>
+        <div class="fila"><label for="mic">Micrófono</label><select id="mic"><option value="">Predeterminado</option></select></div>
+        <div class="fila"><label for="vol">Volumen</label><input id="vol" type="range" min="0" max="100" value="80"></div>
+        <p id="aviso-tecla" class="aviso" hidden>La tecla global no está disponible en este equipo. Usa el botón HABLAR con el ratón.</p>
+      </div>
+
+      <div class="pagina" data-pagina="susurro" hidden>
+        <p class="ayuda">Mantén la tecla de susurro para hablar en otro canal sin salir del tuyo.</p>
+        <div class="fila"><span>Tecla de susurro</span><span><b id="tecla-s">—</b> <button id="cambiar-tecla-s" type="button" class="peq">Cambiar</button> <button id="quitar-tecla-s" type="button" class="peq">Quitar</button></span></div>
+        <div class="fila"><label for="canal-s">Susurrar en</label><select id="canal-s"><option value="">Ninguno</option></select></div>
+        <p id="aviso-susurro" class="aviso" hidden></p>
+      </div>
+
+      <div class="pagina" data-pagina="ventana" hidden>
+        <label class="check"><input id="ontop" type="checkbox"> Mantener esta ventana siempre visible</label>
+        <p class="ayuda">Útil para ver la radio encima de Roblox. No se ve sobre pantalla completa exclusiva.</p>
+      </div>
+
+      <div class="pagina" data-pagina="cuenta" hidden>
+        <div class="fila"><span>Nombre</span><b id="c-nombre"></b></div>
+        <div class="fila"><span>Placa</span><b id="c-placa"></b></div>
+        <div class="fila"><span>Cuerpo</span><b id="c-cuerpo"></b></div>
+        <button id="salir" type="button" class="peligro">Cerrar sesión</button>
+        <p class="pie" id="version2"></p>
+      </div>
+    </div>
+  </div>
 </main>
 
 <script src="vendor/livekit-client.umd.js"></script>
+<script src="servicio.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
