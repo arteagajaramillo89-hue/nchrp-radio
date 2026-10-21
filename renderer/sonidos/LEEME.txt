@@ -1,0 +1,7 @@
+SONIDO DEL BOTÓN DE PÁNICO
+--------------------------
+Si pones aquí un archivo de audio llamado  panico.mp3  (también sirve panico.ogg o panico.wav),
+la radio lo usará como alarma de SOS en vez del tono que trae de serie.
+Para el sonido del pánico de ER:LC: grábalo del juego y guárdalo con ese nombre.
+Dura lo que dure el archivo (conviene que sean 3 a 5 segundos).
+Si no hay archivo, suena el tono de emergencia integrado.

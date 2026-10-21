@@ -27,18 +27,25 @@
 </main>
 
 <main id="vista-radio" class="vista radio" hidden>
+  <nav class="riel" aria-label="Menú">
+    <button id="abrir-mapa" type="button" class="riel-btn" aria-pressed="false" title="Mapa de unidades">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+      <span>Mapa</span>
+    </button>
+    <span class="grow"></span>
+    <button id="abrir-ajustes" type="button" class="riel-btn" title="Configuración">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.3.9a7.6 7.6 0 0 0-1.7-1l-.4-2.5a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9a.5.5 0 0 0-.6.2L2.9 8.8a.5.5 0 0 0 .1.6L5 11a7.5 7.5 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3c.1.2.4.3.6.2l2.3-.9c.5.4 1.1.7 1.7 1l.4 2.5c0 .2.2.4.5.4h3.8c.3 0 .5-.2.5-.4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.3.9c.2.1.5 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6L19.4 13zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  <div class="col-radio">
   <header class="cab">
     <div class="logo" data-logo></div>
     <div class="quien">
       <b id="nombre"></b>
       <span class="linea"><span id="chip" class="chip"></span><span id="servicio" class="serv" hidden></span><span class="estado"><span id="punto" class="punto"></span><span id="estado-texto">Desconectado</span></span></span>
     </div>
-    <button id="abrir-mapa" type="button" class="icono" aria-label="Mapa de unidades" title="Mapa de unidades">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-    </button>
-    <button id="abrir-ajustes" type="button" class="icono" aria-label="Configuración" title="Configuración">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.3.9a7.6 7.6 0 0 0-1.7-1l-.4-2.5a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9a.5.5 0 0 0-.6.2L2.9 8.8a.5.5 0 0 0 .1.6L5 11a7.5 7.5 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3c.1.2.4.3.6.2l2.3-.9c.5.4 1.1.7 1.7 1l.4 2.5c0 .2.2.4.5.4h3.8c.3 0 .5-.2.5-.4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.3.9c.2.1.5 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6L19.4 13zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-    </button>
   </header>
 
   <section class="arbol-caja">
@@ -62,6 +69,32 @@
       </button>
     </div>
   </footer>
+  </div>
+
+  <section id="panel-mapa" class="panel-mapa" hidden aria-label="Mapa de unidades">
+    <div class="mapa-barra">
+      <div class="mapa-leyenda" id="leyenda" aria-label="Filtrar unidades">
+        <button type="button" class="mchip" data-c="pd" aria-pressed="true"><i></i>Policía <b id="n-pd">0</b></button>
+        <button type="button" class="mchip" data-c="cfd" aria-pressed="true"><i></i>Bomberos <b id="n-cfd">0</b></button>
+        <button type="button" class="mchip" data-c="ems" aria-pressed="true"><i></i>EMS <b id="n-ems">0</b></button>
+        <button type="button" class="mchip" data-c="isp" id="chip-isp" aria-pressed="true" hidden><i></i>ISP <b id="n-isp">0</b></button>
+      </div>
+      <div class="mapa-herr">
+        <label class="check"><input id="ver-nombres" type="checkbox"> Nombres</label>
+        <button id="menos" type="button" class="mb" aria-label="Alejar" title="Alejar">−</button>
+        <button id="mas" type="button" class="mb" aria-label="Acercar" title="Acercar">+</button>
+        <button id="centrar" type="button" class="mb ancho" title="Ver todo el mapa">Centrar</button>
+        <button id="cerrar-mapa" type="button" class="mb" aria-label="Cerrar el mapa" title="Cerrar el mapa">✕</button>
+      </div>
+    </div>
+    <div id="caja-mapa" class="caja-mapa">
+      <canvas id="lienzo"></canvas>
+      <div id="sos-mapa" class="sos-mapa" aria-live="assertive"></div>
+      <div id="tip" class="tip" hidden></div>
+      <p id="aviso-mapa" class="aviso-mapa" role="status" aria-live="polite">Cargando unidades…</p>
+      <p id="hora-mapa" class="hora-mapa"></p>
+    </div>
+  </section>
 
   <div id="modal-ajustes" class="modal" hidden>
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tit-ajustes">
@@ -94,6 +127,7 @@
 
       <div class="pagina" data-pagina="ventana" hidden>
         <label class="check"><input id="ontop" type="checkbox"> Mantener esta ventana siempre visible</label>
+        <label class="check"><input id="mapa-sos" type="checkbox" checked> Abrir el mapa solo cuando alguien mande un SOS</label>
         <p class="ayuda">Útil para ver la radio encima de Roblox. No se ve sobre pantalla completa exclusiva.</p>
       </div>
 
@@ -111,6 +145,8 @@
 <script src="vendor/livekit-client.umd.js"></script>
 <script src="servicio.js"></script>
 <script src="actualizar-ui.js"></script>
+<script src="mapa-calibracion.js"></script>
+<script src="mapa-panel.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

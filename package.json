@@ -1,7 +1,7 @@
 {
   "name": "nchrp-radio",
   "productName": "NCHRP Radio",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Radio de los cuerpos de New Chicago RP",
   "main": "main.js",
   "author": "New Chicago RP",

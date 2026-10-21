@@ -146,3 +146,48 @@ select{max-width:210px;padding:7px 10px;border-radius:10px;border:1px solid var(
 body.hay-actu{padding-top:38px}
 body.hay-actu .vista{min-height:calc(100vh - 38px)}
 body.hay-actu .vista.radio{height:calc(100vh - 38px)}
+
+/* ── Riel lateral izquierdo (como TeamSpeak) + panel del mapa dentro de la ventana ── */
+.vista.radio{flex-direction:row}
+.riel{flex:none;width:64px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0;padding-top:max(12px,env(safe-area-inset-top));border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(14,24,48,.96),rgba(6,11,24,.98))}
+.riel .grow{flex:1}
+.riel-btn{width:54px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;border-radius:12px;border:1px solid transparent;background:none;color:var(--muted);font:600 11px "Segoe UI",system-ui,sans-serif;cursor:pointer;transition:color .2s,background .2s,border-color .2s}
+.riel-btn svg{width:24px;height:24px;fill:currentColor}
+.riel-btn:hover{color:var(--ice);background:rgba(255,255,255,.06)}
+.riel-btn.activo{color:var(--ice);background:rgba(65,182,230,.16);border-color:var(--acento)}
+.col-radio{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column}
+.vista.radio.con-mapa .col-radio{flex:0 0 400px}
+.panel-mapa{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;border-left:1px solid var(--line);background:#06101f}
+.panel-mapa[hidden]{display:none}
+.mapa-barra{flex:none;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(22,40,78,.85),rgba(9,15,32,.92))}
+.mapa-leyenda,.mapa-herr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mchip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ice);font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer;transition:opacity .2s,border-color .2s}
+.mchip[hidden]{display:none}
+.mchip i{width:12px;height:12px;border-radius:50%;border:2px solid #07102a;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
+.mchip[data-c=pd] i{background:#41b6e6}.mchip[data-c=cfd] i{background:#ff3b4e}.mchip[data-c=ems] i{background:#fff}.mchip[data-c=isp] i{background:#e8c85a}
+.mchip b{color:var(--muted);font-weight:700}
+.mchip[aria-pressed=false]{opacity:.4}
+.mchip:hover{border-color:var(--blue)}
+.mb{min-width:34px;height:32px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ice);font:700 15px "Segoe UI",sans-serif;cursor:pointer;transition:border-color .2s,background .2s}
+.mb.ancho{font-size:13px}
+.mb:hover{border-color:var(--blue);background:rgba(65,182,230,.18)}
+.caja-mapa{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(900px 600px at 50% 40%,#0c1f3a 0,#050b1a 75%)}
+#lienzo{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;user-select:none}
+#lienzo.arrastrando{cursor:grabbing}
+.sos-mapa{position:absolute;left:12px;top:12px;z-index:6;display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100% - 24px))}
+.sos-mapa:empty{display:none}
+.sos-tarjeta{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:14px;border:2px solid #ffd21f;background:rgba(40,10,16,.94);box-shadow:0 0 24px rgba(255,210,31,.45);animation:sosmapa 1s steps(1,end) infinite}
+@keyframes sosmapa{50%{background:rgba(70,56,6,.96);border-color:#e5384f}}
+.sos-tarjeta .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sos-tarjeta b{font:800 12px/1 "Bahnschrift Condensed","Bahnschrift","Segoe UI",sans-serif;letter-spacing:.16em;color:#ffd21f}
+.sos-tarjeta .n{font:800 17px/1.15 "Bahnschrift Condensed","Bahnschrift","Segoe UI",sans-serif;letter-spacing:.03em;color:#fff;overflow-wrap:anywhere}
+.sos-tarjeta .d{font-size:12px;color:#ffe9a8}
+.sos-tarjeta button{flex:none;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.12);color:#fff;font:600 12px "Segoe UI",sans-serif;cursor:pointer}
+.sos-tarjeta button:hover{background:rgba(255,255,255,.26)}
+.tip{position:absolute;z-index:5;pointer-events:none;max-width:260px;padding:8px 11px;border-radius:12px;border:1px solid var(--line);background:rgba(8,14,30,.95);box-shadow:0 8px 24px -8px #000;font-size:13px}
+.tip b{display:block;font-size:14px}.tip span{display:block;color:var(--muted)}
+.aviso-mapa{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);margin:0;padding:7px 15px;border-radius:999px;border:1px solid var(--line);background:rgba(8,14,30,.92);color:var(--muted);text-align:center;max-width:90%;font-size:13px}
+.aviso-mapa.err{color:#ff8a9c;border-color:rgba(255,90,110,.5)}
+.aviso-mapa:empty{display:none}
+.hora-mapa{position:absolute;right:12px;bottom:8px;margin:0;font-size:12px;color:var(--muted);text-shadow:0 1px 3px #000}
+@media (prefers-reduced-motion:reduce){.sos-tarjeta{animation:none}}

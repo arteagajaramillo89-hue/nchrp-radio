@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('nchrp', {
   login: (placa, password) => ipcRenderer.invoke('login', placa, password),
   token: (canal) => ipcRenderer.invoke('token', canal),
   logout: () => ipcRenderer.invoke('logout'),
-  abrirMapa: () => ipcRenderer.invoke('mapa:abrir'),
+  ventanaMapa: (abierto) => ipcRenderer.invoke('ventana:mapa', !!abierto),
   mapaDatos: () => ipcRenderer.invoke('mapa:datos'),
   estadoDatos: () => ipcRenderer.invoke('estado:datos'),
   capturarTecla: (cual) => ipcRenderer.invoke('ptt:capture', cual),

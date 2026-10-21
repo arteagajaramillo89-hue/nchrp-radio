@@ -86,6 +86,7 @@ async function mostrarLogin(mensaje, esError) {
   usuario = null; canalActual = null; teclaAbajo = ratonAbajo = susurroAbajo = false;
   delete document.body.dataset.cuerpo;
   cerrarAjustes(); cancelarPanico(); $('#alertas').innerHTML = '';
+  if (window.MapaPanel) window.MapaPanel.reiniciar();
   $('#vista-radio').hidden = true; $('#vista-login').hidden = false;
   $('#pass').value = ''; $('#entrar').disabled = false;
   msgLogin(mensaje || '', esError);
@@ -531,22 +532,38 @@ let panicoHasta = 0, panicoTimer = null, panicoReloj = null;
 const ultimoPanico = new Map();   // identidad -> última vez que mandó un aviso (freno anti-spam)
 const COOLDOWN_PANICO = 10000, ESPERA_PANICO = 1500;
 
-// Sirena de emergencia: 8 golpes alternando dos tonos (~4 s). Va por su propio volumen para que se oiga
-// aunque el volumen de la radio esté bajo, pero respeta un mínimo si el usuario lo bajó mucho.
-function sirena() {
+// Alarma de SOS. Si existe sonidos/panico.mp3 (.ogg/.wav) se usa ese audio (p. ej. el del pánico de ER:LC);
+// si no, suena un tono de emergencia de radio: 3 ráfagas de pulsos rápidos (~3,5 s).
+// Va por su propio volumen para oírse aunque la radio esté baja, con un mínimo.
+const audioPanico = document.createElement('audio');
+let audioPanicoOk = false;
+audioPanico.preload = 'auto';
+for (const ext of ['mp3', 'ogg', 'wav']) { const f = document.createElement('source'); f.src = 'sonidos/panico.' + ext; audioPanico.appendChild(f); }
+audioPanico.addEventListener('canplay', () => { audioPanicoOk = true; });
+function volumenAlarma() { return Math.min(0.5, Math.max(0.22, ((cfg.volumen == null ? 80 : cfg.volumen) / 100) * 0.45)); }
+function tonoEmergencia() {
   asegurarAudio(); if (!ctx || !master) return;
-  const vol = Math.min(0.5, Math.max(0.22, ((cfg.volumen == null ? 80 : cfg.volumen) / 100) * 0.45));
-  const t0 = ctx.currentTime, sal = ctx.createGain();
+  const vol = volumenAlarma(), t0 = ctx.currentTime, sal = ctx.createGain();
   sal.gain.value = 1; sal.connect(ctx.destination);
-  for (let i = 0; i < 8; i++) {
-    const o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + i * 0.5;
-    o.type = 'square'; o.frequency.value = i % 2 ? 780 : 1020;
+  for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + r * 1.2 + i * 0.14;
+    o.type = 'square'; o.frequency.value = 1750;
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
-    g.gain.setValueAtTime(vol, t + 0.42);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.48);
-    o.connect(g); g.connect(sal); o.start(t); o.stop(t + 0.5);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.setValueAtTime(vol, t + 0.075);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    o.connect(g); g.connect(sal); o.start(t); o.stop(t + 0.1);
   }
+}
+function sirena() {
+  if (audioPanicoOk) {
+    try {
+      audioPanico.currentTime = 0; audioPanico.volume = Math.max(0.6, Math.min(1, (cfg.volumen == null ? 80 : cfg.volumen) / 100));
+      const p = audioPanico.play(); if (p && p.catch) p.catch(tonoEmergencia);
+      return;
+    } catch (_) {}
+  }
+  tonoEmergencia();
 }
 
 function pintarPanico() {
@@ -567,7 +584,8 @@ async function enviarPanico() {
     msgRadio('No se pudo enviar el aviso de pánico (' + String((e && e.message) || 'error').slice(0, 80) + '). Inténtalo otra vez.', true); return;
   }
   panicoHasta = Date.now() + COOLDOWN_PANICO; pintarPanico();
-  mostrarAlerta((usuario && usuario.nombre ? usuario.nombre : 'Tú') + (usuario && usuario.placa ? ' (' + usuario.placa + ')' : ''), canal, false, true);
+  mostrarAlerta((usuario && usuario.nombre ? usuario.nombre : 'Tú') + (usuario && usuario.placa ? ' (' + usuario.placa + ')' : ''), canal, false, true,
+    { id: 'placa-' + (usuario && usuario.placa), placa: usuario && usuario.placa, nombre: usuario && usuario.nombre });
   if (otros > 0) msgRadio('Aviso de pánico enviado al canal ' + canal + ' (' + otros + (otros === 1 ? ' persona conectada' : ' personas conectadas') + ').');
   else msgRadio('Aviso enviado al canal ' + canal + ', pero no hay nadie más conectado ahí ahora mismo.', true);
 }
@@ -596,14 +614,15 @@ function alRecibirDatos(canalId, payload, participante, topic) {
   if ((ultimoPanico.get(id) || 0) > ahora - 5000) return;
   ultimoPanico.set(id, ahora);
   const placa = /^placa-(\d{1,6})$/.exec(id);
-  mostrarAlerta(participante.name || (placa ? 'Placa ' + placa[1] : id), nombreCanal(canalId));
+  const nombre = participante.name || (placa ? 'Placa ' + placa[1] : id);
+  mostrarAlerta(nombre, nombreCanal(canalId), false, false, { id, placa: placa ? placa[1] : '', nombre });
 }
 
 const MAX_ALERTAS = 3, VIDA_ALERTA_MS = 120000;
 function hora() { const f = new Date(); return String(f.getHours()).padStart(2, '0') + ':' + String(f.getMinutes()).padStart(2, '0'); }
 
 // Letrero rojo parpadeante abajo (encima de los botones): quién pide ayuda y en qué canal. Se queda hasta "Entendido" (o 2 min).
-function mostrarAlerta(quien, canal, prueba, propia) {
+function mostrarAlerta(quien, canal, prueba, propia, mapa) {
   const caja = $('#alertas');
   while (caja.children.length >= MAX_ALERTAS) caja.removeChild(caja.firstChild);
   const a = document.createElement('div'); a.className = 'alerta' + (prueba ? ' prueba' : ''); a.setAttribute('role', 'alert');
@@ -617,8 +636,16 @@ function mostrarAlerta(quien, canal, prueba, propia) {
   const quitar = () => { clearTimeout(tm); if (a.parentNode) a.parentNode.removeChild(a); };
   x.onclick = quitar;
   const tm = setTimeout(quitar, VIDA_ALERTA_MS);
-  a.append(c, x); caja.appendChild(a);
+  a.append(c);
+  if (mapa && window.MapaPanel) {
+    const v = document.createElement('button'); v.type = 'button'; v.textContent = 'Ver en mapa';
+    v.onclick = () => window.MapaPanel.verSos();
+    a.append(v);
+  }
+  a.append(x); caja.appendChild(a);
   sirena();
+  // El mapa se abre solo y muestra dónde está quien pide ayuda (se puede desactivar en Ajustes > Ventana)
+  if (mapa && window.MapaPanel) window.MapaPanel.sos(Object.assign({ canal, abrir: cfg.mapaSos !== false }, mapa));
   try { puente.alertar(); } catch (_) {}
 }
 $('#probar-alarma').onclick = () => { mostrarAlerta((usuario && usuario.nombre ? usuario.nombre : 'Tu nombre') + ' (prueba)', canalActual ? nombreCanal(canalActual) : 'Canal', true); };
@@ -631,7 +658,6 @@ function irTab(n) {
 function abrirAjustes() { $('#modal-ajustes').hidden = false; irTab('voz'); llenarMics(); $('#cerrar-ajustes').focus(); }
 function cerrarAjustes() { $('#modal-ajustes').hidden = true; }
 $('#abrir-ajustes').onclick = abrirAjustes;
-$('#abrir-mapa').onclick = () => { puente.abrirMapa(); };
 $('#cerrar-ajustes').onclick = cerrarAjustes;
 document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => irTab(b.dataset.tab); });
 $('#modal-ajustes').addEventListener('pointerdown', (e) => { if (e.target === $('#modal-ajustes')) cerrarAjustes(); });
@@ -656,6 +682,7 @@ $('#mic').onchange = async () => {
 $('#vol').oninput = () => { cfg.volumen = Number($('#vol').value); aplicarVolumen(); };
 $('#vol').onchange = () => puente.guardarConfig({ volumen: cfg.volumen });
 $('#ontop').onchange = () => puente.siempreVisible($('#ontop').checked);
+$('#mapa-sos').onchange = () => { cfg.mapaSos = $('#mapa-sos').checked; puente.guardarConfig({ mapaSos: cfg.mapaSos }); };
 
 function pintarAvisoSusurro() {
   const a = $('#aviso-susurro'); let t = '';
@@ -733,7 +760,7 @@ $('#salir').onclick = async () => { await puente.logout(); mostrarLogin(''); };
   cfg = await puente.config();
   $('#placa').value = cfg.placa || '';
   $('#version').textContent = 'NCHRP Radio v' + cfg.version; $('#version2').textContent = 'NCHRP Radio v' + cfg.version;
-  $('#vol').value = cfg.volumen; $('#ontop').checked = !!cfg.siempreVisible;
+  $('#vol').value = cfg.volumen; $('#ontop').checked = !!cfg.siempreVisible; $('#mapa-sos').checked = cfg.mapaSos !== false;
   $('#tecla').textContent = cfg.tecla; $('#tecla-s').textContent = cfg.susurroTecla || '—'; 
   if (!cfg.teclaGlobal) { $('#aviso-tecla').textContent = 'La tecla global no está disponible en este equipo. Usa el botón HABLAR con el ratón.'; $('#aviso-tecla').hidden = false; }
   else if (cfg.permisoTeclas === false) { $('#aviso-tecla').textContent = 'Falta un permiso del Mac: abre Ajustes del Sistema > Privacidad y seguridad, activa NCHRP Radio en Accesibilidad y en Monitorización de entrada, y vuelve a abrir la app.'; $('#aviso-tecla').hidden = false; }

@@ -1,6 +1,6 @@
 // NCHRP Radio — proceso principal de Electron.
 // Aquí viven: la sesión (el token nunca llega al navegador), la tecla global de hablar y la configuración.
-const { app, BrowserWindow, ipcMain, shell, session, Menu, systemPreferences } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, session, Menu, systemPreferences, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { post } = require('./api');
@@ -11,7 +11,7 @@ const MAC = process.platform === 'darwin';
 const CODIGO_TECLA_DEFECTO = MAC ? 3640 : 3613; // Windows: Ctrl derecho · Mac: Opción derecha (el Mac no tiene Ctrl derecho)
 
 // ── Configuración (se guarda en la carpeta de datos del usuario; NUNCA la contraseña) ──
-let cfg = { placa: '', pttCode: CODIGO_TECLA_DEFECTO, susurroCode: 0, susurroCanal: '', escuchaCanales: [], volumen: 80, mic: '', siempreVisible: false };
+let cfg = { placa: '', pttCode: CODIGO_TECLA_DEFECTO, susurroCode: 0, susurroCanal: '', escuchaCanales: [], volumen: 80, mic: '', siempreVisible: false, mapaSos: true };
 let archivoCfg = '';
 function cargarCfg() {
   archivoCfg = path.join(app.getPath('userData'), 'config.json');
@@ -73,11 +73,12 @@ function iniciarTecla() {
 
 // ── Sesión del servidor ──
 let sesion = null;
-let mapWin = null; // ventana del mapa de unidades (ER:LC)
+let anchoSinMapa = 0; // ancho de la ventana antes de abrir el panel del mapa (para devolverla a su tamaño)
+const ANCHO_CON_MAPA = 1180, ANCHO_MIN_RADIO = 460, ANCHO_MIN_MAPA = 900;
 
 function registrarIpc() {
   ipcMain.handle('cfg:get', () => ({
-    placa: cfg.placa, volumen: cfg.volumen, mic: cfg.mic, siempreVisible: cfg.siempreVisible,
+    placa: cfg.placa, volumen: cfg.volumen, mic: cfg.mic, siempreVisible: cfg.siempreVisible, mapaSos: cfg.mapaSos !== false,
     tecla: nombreTecla(cfg.pttCode), susurroTecla: cfg.susurroCode ? nombreTecla(cfg.susurroCode) : '', susurroCanal: cfg.susurroCanal, escuchaCanales: cfg.escuchaCanales,
     teclaGlobal: !!uio, permisoTeclas: MAC ? !!safeTrusted() : true, version: app.getVersion(),
   }));
@@ -85,6 +86,7 @@ function registrarIpc() {
     c = c || {};
     if (Number.isFinite(c.volumen)) cfg.volumen = Math.max(0, Math.min(100, Math.round(c.volumen)));
     if (typeof c.mic === 'string') cfg.mic = c.mic.slice(0, 300);
+    if (typeof c.mapaSos === 'boolean') cfg.mapaSos = c.mapaSos;
     if (Array.isArray(c.escuchaCanales)) cfg.escuchaCanales = [...new Set(c.escuchaCanales.filter((x) => typeof x === 'string' && /^[a-z0-9_-]{1,20}$/.test(x)))].slice(0, 4);
     if (typeof c.susurroCanal === 'string' && /^[a-z0-9_-]{0,20}$/.test(c.susurroCanal)) cfg.susurroCanal = c.susurroCanal;
     guardarCfg();
@@ -104,21 +106,28 @@ function registrarIpc() {
     if (!d.ok && (d.error === 'sesion' || d.error === 'placa')) sesion = null;
     return d;
   });
-  ipcMain.handle('logout', () => { sesion = null; if (mapWin && !mapWin.isDestroyed()) mapWin.close(); return true; });
-  ipcMain.handle('mapa:abrir', () => {
-    if (!sesion) return false;
-    if (mapWin && !mapWin.isDestroyed()) { if (mapWin.isMinimized()) mapWin.restore(); mapWin.focus(); return true; }
-    mapWin = new BrowserWindow({
-      width: 980, height: 760, minWidth: 520, minHeight: 420,
-      backgroundColor: '#050b1a', title: 'NCHRP Radio · Mapa', autoHideMenuBar: true,
-      icon: path.join(__dirname, 'build', 'icon.png'),
-      webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
-    });
-    if (cfg.siempreVisible) mapWin.setAlwaysOnTop(true, 'screen-saver');
-    mapWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    mapWin.webContents.on('will-navigate', (e) => e.preventDefault());
-    mapWin.loadFile(path.join(__dirname, 'renderer', 'mapa.html'));
-    mapWin.on('closed', () => { mapWin = null; });
+  ipcMain.handle('logout', () => { sesion = null; return true; });
+  // El mapa vive DENTRO de la ventana principal: al abrirlo la ventana se ensancha hacia la derecha; al cerrarlo vuelve a su ancho.
+  ipcMain.handle('ventana:mapa', (_e, abierto) => {
+    if (!win || win.isDestroyed()) return false;
+    if ((win.isMaximized && win.isMaximized()) || (win.isFullScreen && win.isFullScreen())) return true; // ya hay sitio de sobra
+    const b = win.getBounds();
+    let area = null;
+    try { area = screen.getDisplayMatching(b).workArea; } catch (_) {}
+    if (abierto) {
+      if (!anchoSinMapa) anchoSinMapa = b.width;
+      let ancho = Math.max(b.width, ANCHO_CON_MAPA), x = b.x;
+      if (area) {
+        ancho = Math.min(ancho, area.width);
+        if (x + ancho > area.x + area.width) x = area.x + area.width - ancho;
+        if (x < area.x) x = area.x;
+      }
+      win.setMinimumSize(area ? Math.min(ANCHO_MIN_MAPA, area.width) : ANCHO_MIN_MAPA, 620);
+      win.setBounds({ x, y: b.y, width: ancho, height: b.height });
+    } else {
+      win.setMinimumSize(ANCHO_MIN_RADIO, 620);
+      if (anchoSinMapa) { win.setBounds({ x: b.x, y: b.y, width: anchoSinMapa, height: b.height }); anchoSinMapa = 0; }
+    }
     return true;
   });
   ipcMain.handle('estado:datos', async () => {
@@ -139,7 +148,6 @@ function registrarIpc() {
   ipcMain.handle('ontop', (_e, v) => {
     cfg.siempreVisible = !!v; guardarCfg();
     if (win && !win.isDestroyed()) win.setAlwaysOnTop(!!v, 'screen-saver');
-    if (mapWin && !mapWin.isDestroyed()) mapWin.setAlwaysOnTop(!!v, 'screen-saver');
     return true;
   });
   ipcMain.handle('olvide', () => { shell.openExternal(URL_OLVIDE); return true; });
@@ -147,7 +155,7 @@ function registrarIpc() {
 
 function crearVentana() {
   win = new BrowserWindow({
-    width: 440, height: 780, minWidth: 400, minHeight: 620,
+    width: 500, height: 780, minWidth: 460, minHeight: 620,
     backgroundColor: '#050b1a', title: 'NCHRP Radio', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
